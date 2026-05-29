@@ -2,7 +2,7 @@
 
 Code accompanying the manuscript
 
-"Observable-Based Prediction of Quantum Fisher Information in Multipartite Quantum Systems"
+"Machine-Learning Estimation of Quantum Fisher Information from Collective Observables"
 
 This repository contains:
 
