@@ -27,5 +27,5 @@ qutip
 
 If you use this code, please cite:
 
-Luis D. Zambrano Palma et al.,
-"Observable-Based Prediction of Quantum Fisher Information in Multipartite Quantum Systems"
+LDZ Palma and Yusef Maleki,
+"Machine-Learning Estimation of Quantum Fisher Information from Collective Observables"
