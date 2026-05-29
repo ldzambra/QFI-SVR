@@ -23,112 +23,114 @@ import numpy as np
 import random
 
 
-# Generate a random pure state sampled from the complex Hilbert space C^dim.
-def generate_random_pure_state(dim):
+# Generate a random normalized pure quantum state.
+def sample_pure_state(dim):
 
-    psi = np.random.randn(dim) + 1j * np.random.randn(dim)
+    state = np.random.randn(dim) + 1j*np.random.randn(dim)
 
-    return psi / np.linalg.norm(psi)
-
-
-# Generate a random diagonal density matrix.
-def generate_random_diag_state(dim):
-
-    diag = np.random.rand(dim)
-
-    diag /= diag.sum()
-
-    return np.diag(diag)
+    return state / np.linalg.norm(state)
 
 
-# Generate a mixed state as a convex combination of random pure states.
-def generate_random_mixed_state(n_pure, dim):
+# Generate a diagonal density operator from a random probability distribution.
+def sample_population_state(dim):
 
-    weights = np.random.dirichlet(np.ones(n_pure))
+    populations = np.random.rand(dim)
 
-    rho = np.zeros((dim, dim), dtype=complex)
+    populations /= populations.sum()
 
-    for w in weights:
-
-        psi = generate_random_pure_state(dim)
-
-        rho += w * np.outer(psi, psi.conj())
-
-    return rho
+    return np.diag(populations)
 
 
-# Generate a collection of mixed states.
-def generate_mixed_states(num_states, n_pure, dim):
+# Build a mixed quantum state from an ensemble of pure states.
+def build_density_operator(num_components, dim):
 
-    return [generate_random_mixed_state(n_pure, dim)
-            for _ in range(num_states)]
+    probabilities = np.random.dirichlet(np.ones(num_components))
 
+    density_operator = np.zeros((dim, dim), dtype=complex)
 
-# Generate hybrid states obtained from a convex combination of a random pure state and a random diagonal state.
-def generate_convex_combination_list(num_states, dim):
+    for p in probabilities:
 
-    states = []
+        state = sample_pure_state(dim)
 
-    for _ in range(num_states):
+        density_operator += p*np.outer(state, state.conj())
 
-        t = random.random()
-
-        psi = generate_random_pure_state(dim)
-
-        rho_pure = np.outer(psi, psi.conj())
-
-        rho_diag = generate_random_diag_state(dim)
-
-        rho = t * rho_diag + (1 - t) * rho_pure
-
-        states.append(rho)
-
-    return states
+    return density_operator
 
 
-# Generate a general random density matrix using the Ginibre ensemble.
-def generate_random_density_matrix(dim):
+# Create an ensemble of mixed density operators.
+def create_mixed_ensemble(num_samples, num_components, dim):
 
-    A = (np.random.randn(dim, dim) + 1j * np.random.randn(dim, dim))
-
-    rho = A @ A.conj().T
-
-    rho /= np.trace(rho)
-
-    return rho
+    return [build_density_operator(num_components, dim) for _ in range(num_samples)]
 
 
-# Generate a collection of random density matrices.
-def generate_random_density_matrices(num_states, dim):
+# Create states interpolating between coherent and population states.
+def create_hybrid_ensemble(num_samples, dim):
 
-    return [generate_random_density_matrix(dim) for _ in range(num_states)]
+    hybrid_ensemble = []
+
+    for _ in range(num_samples):
+
+        mixing_parameter = random.random()
+
+        state = sample_pure_state(dim)
+
+        coherent_state = np.outer(state, state.conj())
+
+        population_state = sample_population_state(dim)
+
+        density_operator = (mixing_parameter*population_state + (1-mixing_parameter)*coherent_state)
+
+        hybrid_ensemble.append(density_operator)
+
+    return hybrid_ensemble
 
 
-# Generate and save the complete dataset.
+# Generate a density operator from the Ginibre construction.
+def sample_ginibre_state(dim):
+
+    G = np.random.randn(dim, dim) + 1j*np.random.randn(dim, dim)
+
+    density_operator = G @ G.conj().T
+
+    density_operator /= np.trace(density_operator)
+
+    return density_operator
+
+
+# Create an ensemble of Ginibre density operators.
+def create_ginibre_ensemble(num_samples, dim):
+
+    return [sample_ginibre_state(dim) for _ in range(num_samples)]
+
+
+# Assemble and save the complete quantum-state dataset.
 def main():
 
-    num_pure_matrices = 4000
-    num_mixed_matrices = 6000
-    num_convex_combinations = 4000
-    num_general_states = 6000
-    nq=4
+    num_pure_states = 4000
+    num_mixed_states = 6000
+    num_hybrid_states = 4000
+    num_ginibre_states = 6000
 
-    num_states_for_mixed = 2**nq
+    nq = 4
+
     dim = 2**nq
+    
+    # Generate all state families.
+    mixed_state_ensemble = create_mixed_ensemble(num_mixed_states, dim, dim)
+    pure_state_ensemble = [np.outer(state := sample_pure_state(dim), state.conj()) for _ in range(num_pure_states)]
+    hybrid_state_ensemble = create_hybrid_ensemble(num_hybrid_states, dim)
+    ginibre_state_ensemble = create_ginibre_ensemble(num_ginibre_states, dim)
+    
+    # Assemble all state families into a single training dataset.
+    quantum_state_dataset = (pure_state_ensemble + mixed_state_ensemble + hybrid_state_ensemble + ginibre_state_ensemble)
 
-    mixed_rho_list  = generate_mixed_states(num_mixed_matrices, num_states_for_mixed, dim)
-    pure_rho_list   = [np.outer(psi := generate_random_pure_state(dim), psi.conj()) for _ in range(num_pure_matrices)]
-    hybrid_rho_list = generate_convex_combination_list(num_convex_combinations, dim)
-    general_rho_list = generate_random_density_matrices(num_general_states=num_general_states, dim=dim)
+    # Randomize the ordering of the generated quantum states.
+    random.shuffle(quantum_state_dataset)
 
-  
-    density_matrix_list = (mixed_rho_list+ pure_rho_list+ hybrid_rho_list+ general_rho_list)
+    #Save them
+    np.save(f"qfi_dataset_{nq}qubits.npy", quantum_state_dataset)
 
-    random.shuffle(density_matrix_list)
-
-    np.save("random_density_matrices_4qubit.npy", density_matrix_list)
-
-    print(f"Dataset generated successfully: " f"{len(density_matrix_list)} states")
+    print(f"Dataset generated successfully: " f"{len(quantum_state_dataset)} states")
 
 
 if __name__ == "__main__":
