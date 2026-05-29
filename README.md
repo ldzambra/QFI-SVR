@@ -21,7 +21,6 @@ numpy
 scipy
 matplotlib
 scikit-learn
-qutip
 
 ## Citation
 
