@@ -27,5 +27,5 @@ qutip
 
 If you use this code, please cite:
 
-LDZ Palma and Yusef Maleki,
+Yusef Maleki and LDZ Palma,
 "Machine-Learning Estimation of Quantum Fisher Information from Collective Observables"
